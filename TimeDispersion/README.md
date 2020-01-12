@@ -29,7 +29,8 @@
 ```
 
 ## Output from sensor with -verbose
-```XML
+
+```Powershell
 VERBOSE: Domain supplied: one, UserName: Domain\user
 VERBOSE: Creating secure password string
 VERBOSE: Creating credential for target system srv104.pihl.local
@@ -37,6 +38,8 @@ VERBOSE: Requesting target system local time
 VERBOSE: Calculating time difference
 VERBOSE: Creating XML formatted output
 VERBOSE: Write formatted result to PRTG
+```
+```XML
 <prtg>
     <result>
         <channel>TimeDifference</channel>
