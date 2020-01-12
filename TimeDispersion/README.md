@@ -1,5 +1,13 @@
 # Custom sensor to measure time diff between PRTG probe server and remote system
 
+## Key command
+```Powershell
+Get-WmiObject -Class win32_localtime -ComputerName $Computername -Credential $Credential -ErrorAction Stop
+```
+Tested on target OS;
+- XP
+- WIndows 10 1903
+
 ## Powershell SYNOPSIS
 ![PRTG sensor setting](get-PRTGTimeDispersion_PRTG_setting.png "PRTG sensor setting")
 
