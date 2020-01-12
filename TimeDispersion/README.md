@@ -9,8 +9,6 @@ Tested on target OS;
 - WIndows 10 1903
 
 ## Powershell SYNOPSIS
-![PRTG sensor setting](get-PRTGTimeDispersion_PRTG_setting.png "PRTG sensor setting")
-
 ```Powershell
 .SYNOPSIS
     PRTG sensor 'EXE/Script adnvanced' measuring Time Dispersion between minitored device and PRTG server
@@ -35,6 +33,7 @@ Tested on target OS;
 .NOTES
     2020-01-10 Version 1 Klas.Pihl@Atea.se
 ```
+![PRTG sensor setting](get-PRTGTimeDispersion_PRTG_setting.png "PRTG sensor setting")
 
 ## Output from sensor with -verbose
 
