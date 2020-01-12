@@ -1,6 +1,6 @@
 # Custom sensor to measure time diff between PRTG probe server and remote system
 
-##Powershell SYNOPSIS
+## Powershell SYNOPSIS
 ![PRTG sensor setting](get-PRTGTimeDispersion_PRTG_setting.png "PRTG sensor setting")
 
 ```Powershell
@@ -27,3 +27,25 @@
 .NOTES
     2020-01-10 Version 1 Klas.Pihl@Atea.se
 ```
+
+## Output from sensor with -verbose
+```XML
+VERBOSE: Domain supplied: one, UserName: Domain\user
+VERBOSE: Creating secure password string
+VERBOSE: Creating credential for target system srv104.pihl.local
+VERBOSE: Requesting target system local time
+VERBOSE: Calculating time difference
+VERBOSE: Creating XML formatted output
+VERBOSE: Write formatted result to PRTG
+<prtg>
+    <result>
+        <channel>TimeDifference</channel>
+        <unit>TimeSeconds</unit>
+        <showChart>1</showChart>
+        <showTable>1</showTable>
+        <float>1</float>
+        <value>1</value>
+    </result>
+</prtg>
+```
+
