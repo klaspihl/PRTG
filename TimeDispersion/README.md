@@ -1,5 +1,6 @@
-#Custom sensor to measure time diff between PRTG probe server and remote system
+# Custom sensor to measure time diff between PRTG probe server and remote system
 
+##Powershell SYNOPSIS
 ![PRTG sensor setting](get-PRTGTimeDispersion_PRTG_setting.png "PRTG sensor setting")
 
 ```Powershell
