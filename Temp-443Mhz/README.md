@@ -8,8 +8,8 @@ A private project to get temperature and humidity readings to [PRTG](https://www
 2.	Find out channel ID of the sensors.
 
 ## Screenshots
-![Screen 1](https://github.com/KlasPihl/PRTG/blob/master/PRTG%20temperature%20443.png)
-![Screen 2](https://github.com/KlasPihl/PRTG/blob/master/PRTG%20temperature%20443%20bathroom.png)
+![Screen 1](/PRTG%20temperature%20443.png)
+![Screen 2](/PRTG%20temperature%20443%20bathroom.png)
 
 ## Instructions
 Install and start Tellduscenter to find out the channel ID of the sensor you want to read and import to PRTG.
