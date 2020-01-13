@@ -6,7 +6,10 @@ A private project to get temperature and humidity readings to [PRTG](https://www
 ## Dependencys
 1.	Install TelldusCenter
 2.	Find out channel ID of the sensors.
-
+    * ```Powershell
+    & 'C:\Program Files (x86)\Telldus\tdtool.exe' --list-sensors
+     ```
+ 
 ## Screenshots
 ![Screen 1](PRTG%20temperature%20443.png)
 ![Screen 2](PRTG%20temperature%20443%20bathroom.png)
@@ -18,16 +21,16 @@ A Powershell script start the x86 program to export all the sensors to a a strin
 ```powershell
 Write-Output "<prtg>"
     Write-Output "<result>"
-    Write-Output "<channel>Temperature</channel>"
-    Write-Output "<showChart>1</showChart>"
-    Write-Output "<showTable>1</showTable>"
-    Write-Output "<value>$temperature</value>"
+        Write-Output "<channel>Temperature</channel>"
+        Write-Output "<showChart>1</showChart>"
+        Write-Output "<showTable>1</showTable>"
+        Write-Output "<value>$temperature</value>"
     Write-Output "</result>"
     Write-Output "<result>"
-    Write-Output "<channel>Humidity</channel>"
-    Write-Output "<showChart>1</showChart>"
-    Write-Output "<showTable>1</showTable>"
-    Write-Output "<value>$humidity</value>"
+        Write-Output "<channel>Humidity</channel>"
+        Write-Output "<showChart>1</showChart>"
+        Write-Output "<showTable>1</showTable>"
+        Write-Output "<value>$humidity</value>"
     Write-Output "</result>"
 Write-Output "</prtg>"
 ```
