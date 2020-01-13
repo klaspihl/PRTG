@@ -6,7 +6,7 @@ A private project to get temperature and humidity readings to [PRTG](https://www
 ## Dependencys
 1.	Install TelldusCenter
 2.	Find out channel ID of the sensors.
-    * ```Powershell
+    ```Powershell
     & 'C:\Program Files (x86)\Telldus\tdtool.exe' --list-sensors
      ```
  
