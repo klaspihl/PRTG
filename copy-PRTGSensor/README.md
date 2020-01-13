@@ -1,4 +1,4 @@
-# Script to copy/clone one or several sensors to one or several devices.
+# Script to copy/clone one or multiple sensors to one or multiple devices.
 
 ## Limitations is max 2500 sensors.
 
