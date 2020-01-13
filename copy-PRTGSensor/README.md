@@ -20,7 +20,9 @@ $Global:APIkeys = [PSCustomObject]@{
 ```
 ## Output from script
 
- SourceSensor                      Success TargetDevice
-    ------------                      ------- ------------
-    Microsoft Hyper-V Network Adapter    True Server1
-    SNMP Traffic                         True Server1
+SourceSensor | Success | TargetDevice
+--- | --- | ---
+Microsoft Hyper-V Network Adapter | **True** | Server1
+Microsoft Hyper-V Network Adapter | **True** | Server2
+SNMP Traffic | **False** | Server1
+SNMP Traffic | **True** | Server2
