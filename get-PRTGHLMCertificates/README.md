@@ -9,7 +9,7 @@ Get all certificates under LocalMachine on the Device the sensor is deployed to
 
 
 ## Instructions
-Copy script to %ProgramFiles(x86)%"\PRTG Network Monitor\Custom Sensors\EXEXML on all probes and add an 'XML Custom EXE' sensor.
+Copy script to %ProgramFiles(x86)%"\PRTG Network Monitor\Custom Sensors\EXEXML on all probes and add a 'XML Custom EXE' sensor.
 In sensor settings define parameter AlarmDaysToExpire (default value 14 days)
 ```
 -AlarmDaysToExpire '14'
