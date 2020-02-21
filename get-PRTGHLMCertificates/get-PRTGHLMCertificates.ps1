@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Get all certificates under local machine on Windows host and returns XM formatted output for PRTG
+    Get all certificates under local machine on Windows host and returns XML formatted output for PRTG
 .DESCRIPTION
     Optinal parameter 'AlarmDaysToExpire' to define when a message in PRTG should inform properties of certificates about to expire.
     One Channel is created per Cerificate on FriendlyName. If certificate is renewed with same Friendlyname same channel will be used in PRTG. If new friendly name is created a new channel will be created.
@@ -64,7 +64,7 @@ function Export-PRTGXML {
     $Value = $Value.Replace(',','.')
     Write-Output '<result>'
     Write-Output ('<channel>{0}</channel>' -f $Channel)
-    Write-Output ('<SpeedTime>{0}</SpeedTime>' -f $unit)
+    Write-Output ('<CustomUnit>{0}</CustomUnit>' -f $unit)
     Write-Output '<showChart>1</showChart>'
     Write-Output '<showTable>1</showTable>'
     #Write-Output '<float>1</float>'
