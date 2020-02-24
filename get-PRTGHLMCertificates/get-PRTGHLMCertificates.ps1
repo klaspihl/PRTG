@@ -101,6 +101,10 @@ function Write-PRTGError {
     <#
     .SYNOPSIS
         Write PRTG formatted XML output with error exception and exit script.
+<<<<<<< HEAD
+=======
+
+>>>>>>> c73c131fb3fc76b0a2d35f8a36543440660f2470
     .EXAMPLE
         PS C:\> Write-PRTGError 
         write output in PRTG XML and exit script
