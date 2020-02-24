@@ -10,6 +10,7 @@
     Returns an XML formatted output with one channel per certificate. If Any cerificate is under AlarmDaysToExpire  <text> is added to sensor.
 .PARAMETER AlarmDaysToExpire
     Days before an alarm text is returned if a certificate is about to expire.
+.PARAMETER ComputerName 
 
 .OUTPUTS
     XML
@@ -18,7 +19,9 @@
 #>
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$false,Position=0)]
+    [string]$ComputerName,
+    [Parameter(Mandatory=$false,Position=1)]
     [int]$AlarmDaysToExpire=14
 )
 function Format-PrtgXml([xml]$xml)
@@ -76,7 +79,7 @@ function Export-PRTGXML {
 $Script:ErrorActionPreference = 'Stop'
 try {
     Write-Verbose "Collecting all certificates in LocalMachine on target host"
-    $AllCerts = Get-ChildItem -Path Cert:\LocalMachine\My\ 
+    $AllCerts = Invoke-command -ComputerName $ComputerName -ScriptBlock {Get-ChildItem -Path Cert:\LocalMachine\My\ -ErrorAction Stop} -ErrorAction Stop
     $Date = Get-Date
     Write-Verbose "Creating formatted object of Certificates"
     $CertList = 

@@ -1,29 +1,17 @@
 ﻿<#
 .SYNOPSIS
-    Clone a Device, input CSV.
+    Set a location on a group or device from an CSV input file
 .DESCRIPTION
-    Uses PRTG API to clone devices.
-    Create a teamplate Device and record ID or name
-    Create an template Group and record ID
+    Uses PRTG API to set location.
+    
 .EXAMPLE
-    PS C:\>.\copy-PRTGDevice.ps1 -PRTGHost 'https://prtg.westeurope.cloudapp.azure.com/' -UserName apiadmin -Passhash 0123456789  -SourceDeviceID 1234 -TargetListCSV '.\DeviceListcsv' -BaseGroupID 8888 -Verbose
-    Group      : GroupName
-    DeviceName : DeviceName
-    Tag        : Tag
-    IP/DNS     : 192.168.0.1
-    GroupID    : 8888
-    DeviceID   : 2234
-    TagResult  : True
+    PS C:\>
 .PARAMETER PRTGHost
     URL to PRTG core server
 .PARAMETER UserName
     Username of account to use for API calls
 .PARAMETER Passhash
     Passhash for account to use for API calls
-.PARAMETER SourceDeviceID
-    Device ID as source
-.PARAMETER BaseGroupID
-    Group ID as source
 .PARAMETER TargetListCSV
     CSV list formatted by DeviceName, IP/DNS, Tag, Group
 
@@ -41,12 +29,9 @@ param (
     [string]$UserName,
     [Parameter(Mandatory=$true,HelpMessage="https://yourserver.com/api/getpasshash.htm?username=myuser&password=mypassword")]
     [int]$Passhash,
-    [Parameter(Mandatory=$false,HelpMessage="The sensor ID to clone")]
-    [int]$SourceDeviceID,
     [Parameter(Mandatory=$true,HelpMessage="Path to CSV with target devices",ValueFromPipeline)]
-    [string]$TargetListCSV,
-    [Parameter(Mandatory=$true,HelpMessage="Base group ID for placement")]
-    [string]$BaseGroupID
+    [string]$TargetListCSV
+
 )
 #region Self signed certificates
 add-type @"
@@ -62,6 +47,16 @@ add-type @"
 "@
 Write-Verbose "Accepting self signed certificates"
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+<# PS7
+Write-Verbose "Adding class for validset"
+Class APINames : System.Management.Automation.IValidateSetValuesGenerator {
+    [String[]] GetValidValues() {
+        #$APINames = $APIkeys | Get-Member -Type NoteProperty | Select-Object -ExpandProperty Name
+        $APINames = 'AddTag','DuplicateDevice','DuplicateGroup','GetAllDevices','GetGroups','Pause','ReSetLocation','Resume','SetLocation'
+        return [String[]] $APINames
+    }
+}
+#>
 #endregion Self signed certificates
 #region Functions
 function get-PRTGAPIData {
@@ -115,7 +110,7 @@ function get-PRTGAPIData {
     }
     return $true
 }
-function add-PRTGAPIData {
+function invoke-PRTGAPIData {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true,HelpMessage="Base url to PRTG core server, like https://prtg01.pihl.local")]
@@ -125,6 +120,13 @@ function add-PRTGAPIData {
         [string]$auth,
 
         [Parameter(Mandatory=$true,HelpMessage="API key /api/function...")]
+        <#[ValidateSet('AddTag','DuplicateDevice','DuplicateGroup','GetAllDevices','GetGroups','Pause','ReSetLocation','Resume','SetLocation')] #($APIkeys | Get-Member -Type NoteProperty | Select-Object -ExpandProperty Name ) -join "','"
+        #[ValidateSet([APINames])] #PS7
+        [Validatescript({
+			if (($APIkeys | Get-Member -Type NoteProperty | Select-Object -ExpandProperty Name) -contains $_) {$true}
+			else { throw "Valid APIkeys; "+(($APIkeys | Get-Member -Type NoteProperty | Select-Object -ExpandProperty Name) -join ', ')}
+            })]
+            #>
         [string]$API
     )
     
@@ -141,6 +143,15 @@ function add-PRTGAPIData {
         if($request.StatusCode -ne 200) {
             Write-Verbose "Failed respons from uri"
             return $false
+        }
+        if($request.StatusCode -eq 200) {
+            Write-Verbose "Successfull response"
+            $PRTG_Result = convertFrom-csv -ErrorAction Stop  ($request.content) -WarningAction SilentlyContinue | Select-Object * -ExcludeProperty *raw*
+            if($PRTG_Result) {
+                return $PRTG_Result
+            } else {
+                return $true
+            }
         }
        
     
@@ -198,13 +209,15 @@ function read-TargetListCSV {
 #endregion Functions
 #region Main
     $Global:APIkeys = [PSCustomObject]@{
-        GetAllDevices = 'api/table.xml?content=devices&output=csvtable&columns=objid,device,host&count=2500&id={0}'
+        GetAllDevices = 'api/table.xml?content=devices&output=csvtable&columns=objid,device,host,name&count=2500&id={0}'
         DuplicateDevice = 'api/duplicateobject.htm?id={0}&name={1}&host={2}&targetid={3}' #SourceDeviceID, NewName, host/IP, group
         DuplicateGroup = 'api/duplicateobject.htm?id={0}&name={1}&targetid={2}' #TargetGroupID, NewName, LocationGroupID
         Resume = 'api/pause.htm?id={0}&action=1'
         Pause = 'api/pause.htm?id={0}&action=0'
-        GetGroups = 'api/table.xml?content=groups&output=csvtable&columns=objid,probe,group,name,downsens,partialdownsens,downacksens,upsens,warnsens,pausedsens,unusualsens,undefinedsens'
         AddTag = 'api/setobjectproperty.htm?id={0}&name=tags&value={1}' #TargetObject,(tags separated by ',')
+        SetLocation = 'api/setlonlat.htm?id={0}&location={1}&lonlat={2}' #objectID, Location address, "longitude,latitude"
+        ReSetLocation = 'api/setlonlat.htm?id={0}' #objectID, Location address
+        GetGroups = 'api/table.xml?content=groups&output=csvtable&columns=objid,probe,group,name&id={0}' #down from groupID
     }
     $Auth = "&username={0}&passhash={1}" -f $UserName,$Passhash
     #hämtar device,host och ID
@@ -223,54 +236,69 @@ function read-TargetListCSV {
     $TargetDevices = read-TargetListCSV -path $TargetListCSV | Select-Object *,GroupID,DeviceID,TagResult
     $Groups = $TargetDevices | Group-Object Group | Select-Object Name,ID
     Write-Verbose "Verifying group exist and otherwise create group"
-    $AllPRTGGroups = get-PRTGAPIData -PRTGHost $PRTGHost -auth $Auth -APIFunction GetGroups
-    $BaseGroupIDName = $AllPRTGGroups | Where-Object ID -eq $BaseGroupID
-    foreach ($Group in $Groups) {
-        Write-Verbose "Find Group ID on $($Group.Name) else create Group under base group: $($BaseGroupIDName.Group), ID: $BaseGroupID"
-            $Group.ID = $AllPRTGGroups | Where-Object Group -eq $Group.name | Select-Object -ExpandProperty ID
-            if(-not $Group.ID) {
-                Write-Verbose "No existing group with name $($Group.Name) found, creating..."
-                $APISplat = @{
-                    PRTGHost = $PRTGHost
-                    Auth = $Auth
-                    API = $($APIkeys.DuplicateGroup -f $BaseGroupID,$Group.Name,9016)
-                }
-                $Group.ID = add-PRTGAPIData @APISplat
-                Start-Sleep -Seconds 3 #Data owerflow
-            } else {
-                Write-Verbose "Group already exists"
-            }
-    }
-   
-foreach ($TargetDevice in $TargetDevices) {
-    Write-Verbose $TargetDevice
-    Write-Verbose "Creating device $($TargetDevice.DeviceName)"
-    $TargetDevice.GroupID = $Groups | Where-Object Name -eq $TargetDevice.Group | Select-Object -ExpandProperty ID
+    
+    #2020-01-31 All objects
     $APISplat = @{
         PRTGHost = $PRTGHost
         Auth = $Auth
-        API = $($APIkeys.DuplicateDevice -f $SourceDeviceID,$TargetDevice.DeviceName,$TargetDevice.'IP/DNS',$TargetDevice.GroupID)
+        API = $($APIkeys.GetGroups)
     }
-    $TargetDevice.DeviceID = add-PRTGAPIData @APISplat
-    Write-Verbose "Add tag..."
+    $AllGroups = invoke-PRTGAPIData @APISplat -Verbose
     $APISplat = @{
         PRTGHost = $PRTGHost
         Auth = $Auth
-        API = $($APIkeys.AddTag -f $TargetDevice.DeviceID,$TargetDevice.Tag)
+        API = $($APIkeys.GetAllDevices )
     }
-    $TargetDevice.TagResult = add-PRTGAPIData @APISplat
-    Start-Sleep -Seconds 3 #Data owerflow
-}
-if($TargetDevices.GroupID -contains $false) {
-    Write-Warning "Some groups could not be created"
-}
+    $AllDevices = invoke-PRTGAPIData @APISplat -Verbose
+    
+  $AllObjects = ($AllDevices | Select-Object ID,object) +( $AllGroups | Select-Object id,object)
+    
 
-if($TargetDevices.DeviceID -contains $false) {
-    Write-Warning "Devices could not be cloned"
-}
 
-if($TargetDevices.TagResult -contains $false) {
-    Write-Warning "Some Tags could not be set"
+#region tests
+  #region test location
+    $TargetDevice = 8926
+    $LocationAddress = 'London'
+    $LocationGPS = $null #'-14.92829,13.56812'
+  $APISplat = @{
+    PRTGHost = $PRTGHost
+    Auth = $Auth
+    API = $($APIkeys.SetLocation -f $TargetDevice,$LocationAddress,$LocationGPS)    #API = $($APIkeys.SetLocationNoGPS -f $TargetDevice,$LocationAddress,$LocationGPS)
 }
-Write-Output $TargetDevices
+invoke-PRTGAPIData @APISplat -Verbose
+  #endregion test location
+#region test groups
+    $TargetGroupID=50
+    $APISplat = @{
+        PRTGHost = $PRTGHost
+        Auth = $Auth
+        #API = $($APIkeys.GetGroups -f $TargetGroupID)    #API = $($APIkeys.SetLocationNoGPS -f $TargetDevice,$LocationAddress,$LocationGPS)
+        APIFunction = 'GetGroups'
+        TargetGroupID = $TargetGroupID
+    }
+    get-PRTGAPIData @APISplat
+
+
+    $TargetGroupID=50
+    $APISplat = @{
+        PRTGHost = $PRTGHost
+        Auth = $Auth
+        API = $($APIkeys.GetGroups -f $TargetGroupID)    #API = $($APIkeys.SetLocationNoGPS -f $TargetDevice,$LocationAddress,$LocationGPS)
+        #APIFunction = 'GetGroups'
+        #TargetGroupID = $TargetGroupID
+    }
+   invoke-PRTGAPIData @APISplat -Verbose
+invoke-PRTGAPIData -API 
+      #endregion test groups
+#region test alldevices
+$TargetGroupID=$null #8851
+$APISplat = @{
+    PRTGHost = $PRTGHost
+    Auth = $Auth
+    API = $($APIkeys.GetAllDevices -f $TargetGroupID)   
+}
+invoke-PRTGAPIData @APISplat -Verbose
+ #endregion test alldevices
+    #endregion tests
+
 #endregion Main
