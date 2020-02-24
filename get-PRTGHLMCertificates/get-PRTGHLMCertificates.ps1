@@ -101,10 +101,6 @@ function Write-PRTGError {
     <#
     .SYNOPSIS
         Write PRTG formatted XML output with error exception and exit script.
-<<<<<<< HEAD
-=======
-
->>>>>>> c73c131fb3fc76b0a2d35f8a36543440660f2470
     .EXAMPLE
         PS C:\> Write-PRTGError 
         write output in PRTG XML and exit script
@@ -152,17 +148,18 @@ try {
     Write-Verbose "Debugging information if an error occurred"
     Write-PRTGError
 }
-Write-Verbose "Removing Certificate thumbprints defined in parameter(s)"
 
 if($IgnoreThumbprint) {
-    $IgnoreThumbprint = $IgnoreThumbprint.Split(',;')
+    Write-Verbose "Removing Certificate thumbprints defined in parameter(s)"
+    $IgnoreThumbprint = $IgnoreThumbprint -Split('[,;]')
     $CertList = $IgnoreThumbprint | ForEach-Object {
         $CertList | Where-Object Thumbprint -ne $PSItem
     }
     
 }
 if($DefinedThumbprint) {
-    $DefinedThumbprint = $DefinedThumbprint.Split(',;')
+    Write-Verbose "Only Certificate thumbprints defined in parameter(s)"
+    $DefinedThumbprint = $DefinedThumbprint -Split('[,;]')
     $CertList = $DefinedThumbprint | ForEach-Object {
         $CertList | Where-Object Thumbprint -eq $PSItem
     }
