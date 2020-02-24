@@ -6,23 +6,41 @@
     One Channel is created per Cerificate on FriendlyName. If certificate is renewed with same Friendlyname same channel will be used in PRTG. If new friendly name is created a new channel will be created.
     Alarms in PRTG is set on each channel.
 .EXAMPLE
-    PS C:\> get-PRTGHLMCertificates.ps1 -AlarmDaysToExire 30
-    Returns an XML formatted output with one channel per certificate. If Any cerificate is under AlarmDaysToExpire  <text> is added to sensor.
+    PS C:\> get-PRTGHLMCertificates.ps1 -ComputerName server01 -AlarmDaysToExire 30
+        Returns an XML formatted output with one channel per certificate. If Any cerificate is under AlarmDaysToExpire  <text> is added to sensor.
+    PS C:\> get-PRTGHLMCertificates.ps1 server01
+        Usage default value of 14 days 
 .PARAMETER AlarmDaysToExpire
     Days before an alarm text is returned if a certificate is about to expire.
 .PARAMETER ComputerName 
-
+    Device to monitor, can be defined as '%host' in PRTG
+.PARAMETER IgnoreThumbprint 
+    Certificates with Thumbprints to ignored, separated by ';'
+.PARAMETER DefinedThumbprint
+    Certificates with Thumbprints to monitor, separated by ';'. All other certificates is ignored.
 .OUTPUTS
-    XML
+    PRTG XML
 .NOTES
     2020-02-21 Version 1 Klas.Pihl@Atea.se
+    2020-02-24 Version 1.1 Klas.Pihl@Atea.se
+        Added New parameters
+        * IgnoreThumbprint - Retrive monitors all certificates except Thumbprints defined in parameter. Separated by ';'
+        * DefinedThumbprint - If Parameter is populated only certificates with defined Thumbprints monitored.
+        
 #>
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$false,Position=0)]
     [string]$ComputerName,
+    
     [Parameter(Mandatory=$false,Position=1)]
-    [int]$AlarmDaysToExpire=14
+    [int]$AlarmDaysToExpire=14,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$IgnoreThumbprint,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$DefinedThumbprint
 )
 function Format-PrtgXml([xml]$xml)
 {
@@ -76,10 +94,33 @@ function Export-PRTGXML {
     Write-Output '<LimitMode>1</LimitMode>'
     Write-Output '</result>'
 }
+function Write-PRTGError {
+    [CmdletBinding()]
+    param (
+    )
+    <#
+    .SYNOPSIS
+        Write PRTG formatted XML output with error exception and exit script.
+    .EXAMPLE
+        PS C:\> Write-PRTGError 
+        write output in PRTG XML and exit script
+    .INPUTS
+        $global:Error
+    .NOTES
+       2020-02-24 Version 1 Klas.Pihl@Atea.se
+    #>
+    $XMLOutput = '<prtg>'
+    $XMLOutput += Write-Output '<error>1</error>'
+    $XMLOutput += Write-Output '<text>'
+    $XMLOutput += $error.Exception.Message 
+    $XMLOutput += '</text>' 
+    $XMLOutput += '</prtg>'
+    exit 
+}
 $Script:ErrorActionPreference = 'Stop'
 try {
     Write-Verbose "Collecting all certificates in LocalMachine on target host"
-    $AllCerts = Invoke-command -ComputerName $ComputerName -ScriptBlock {Get-ChildItem -Path Cert:\LocalMachine\My\ -ErrorAction Stop} -ErrorAction Stop
+    $AllCerts = Invoke-command -ComputerName $ComputerName -ScriptBlock {Get-ChildItem -Path Cert:\LocalMachine\My\ -ErrorAction Stop} -ErrorAction Stop -Credential $cred
     $Date = Get-Date
     Write-Verbose "Creating formatted object of Certificates"
     $CertList = 
@@ -105,13 +146,25 @@ try {
     }
 } catch {
     Write-Verbose "Debugging information if an error occurred"
-    $XMLOutput = '<prtg>'
-    $XMLOutput += Write-Output '<error>1</error>'
-    $XMLOutput += Write-Output ('<text>{0}</text>' -f ($error.Exception | Out-String))
-    $XMLOutput += '</prtg>'
-    Format-PrtgXml -xml $XMLOutput
-    exit 
+    Write-PRTGError
 }
+Write-Verbose "Removing Certificate thumbprints defined in parameter(s)"
+
+if($IgnoreThumbprint) {
+    $IgnoreThumbprint = $IgnoreThumbprint.Split(',;')
+    $CertList = $IgnoreThumbprint | ForEach-Object {
+        $CertList | Where-Object Thumbprint -ne $PSItem
+    }
+    
+}
+if($DefinedThumbprint) {
+    $DefinedThumbprint = $DefinedThumbprint.Split(',;')
+    $CertList = $DefinedThumbprint | ForEach-Object {
+        $CertList | Where-Object Thumbprint -eq $PSItem
+    }
+}
+
+
 Write-Verbose "Creating text message for each Cerificate"
 foreach ($Cert in $CertList) {
     $Cert.MessageText = "$($Cert.FriendlyName) issued by $($Cert.Issuer) with Thumbprint $($Cert.Thumbprint) expires in $($Cert.DaysToExpiration) day(s)"
