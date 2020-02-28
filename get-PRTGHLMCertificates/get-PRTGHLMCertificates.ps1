@@ -129,7 +129,7 @@ try {
             FriendlyName = switch ($Cert.FriendlyName) {
                 {$PSItem} {$Cert.FriendlyName  }
                 Default {switch ($Cert.issuer) {
-                    {$PSItem -match '='} {$Cert.issuer.split('=') | Select-Object -Last 1}
+                    {$PSItem -match '='} {($Cert.Subject -replace('CN=|DC=','')).split(',').trim()  -join '.'}
                     Default {$Cert.issuer}
                 }}
             }
