@@ -120,7 +120,7 @@ function Write-PRTGError {
 $Script:ErrorActionPreference = 'Stop'
 try {
     Write-Verbose "Collecting all certificates in LocalMachine on target host"
-    $AllCerts = Invoke-command -ComputerName $ComputerName -ScriptBlock {Get-ChildItem -Path Cert:\LocalMachine\My\ -ErrorAction Stop} -ErrorAction Stop -Credential $cred
+    $AllCerts = Invoke-command -ComputerName $ComputerName -ScriptBlock {Get-ChildItem -Path Cert:\LocalMachine\My\ -ErrorAction Stop} -ErrorAction Stop 
     $Date = Get-Date
     Write-Verbose "Creating formatted object of Certificates"
     $CertList = 
