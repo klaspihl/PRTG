@@ -31,6 +31,6 @@ foreach  ($server in $ServerList)
     {
     if(test-online -fqdn $server)
         {
-        Invoke-Command -ComputerName $fqdn -ScriptBlock {add-WindowsFeature snmp-service -Restart:$false}
+        Invoke-Command -ComputerName $server -ScriptBlock {add-WindowsFeature snmp-service -Restart:$false}
         }
     }
