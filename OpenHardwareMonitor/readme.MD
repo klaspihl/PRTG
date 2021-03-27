@@ -7,6 +7,6 @@ Asus Ryzen alternative to Intel NUC - PN50 with Ryzen 4700U is a bit loud.
 ![A50](http://www.akasa.co.uk/img/product/common/gallery/00/A-NUC62-M1B_g01.jpg)
 
 ## Setup & result
-![Sensor settings](/images/sensorsettings.png)
+![Sensor settings](./images/sensorsettings.png)
 
-![Sensor output](/images/sensorsoutput.png)
+![Sensor output](./images/sensorsoutput.png)
