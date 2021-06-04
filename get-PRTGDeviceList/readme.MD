@@ -1,5 +1,8 @@
 # Script to generate an object of devices and groups
 
+## Example
+.\get-PRTGDeviceList.ps1 -PRTGCore https://monitor.pihl.local -UserName PersonalUser | ConvertTo-Html -Title Devicelista | Out-File -Path  c:\temp\PRTGDevces.html ; Invoke-Item c:\temp\PRTGDevces.html
+
 ## Script help get-help .\get-PRTGDeviceList.ps1
 ```powershell
 
@@ -21,8 +24,8 @@ SYNOPSIS
         PowerShell credential request
         User and password to PRTG web GUI
         Password for user prtgadmin: **********
-        
-        
+
+
 -PRTGCore <Uri>
     PRTG core server URL
         Example; https://monitor.pihl.local:8080
@@ -53,7 +56,7 @@ SYNOPSIS
     Default value
     Accept pipeline input?       false
     Accept wildcard characters?  false
-    
-    
-    
+
+
+
     ```
