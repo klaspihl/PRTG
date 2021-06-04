@@ -67,7 +67,7 @@ try {
     if( -not ($PSBoundParameters.ContainsKey('UserHash'))) {
         Write-Verbose "No passhash entered as argument, request user credentials and try to get hash from PRTG"
 
-        $Credentials = Get-Credential -Message "User and password to PRTG web GUI" -UserName $Credentials.UserName
+        $Credentials = Get-Credential -Message "User and password to PRTG web GUI" -UserName $UserName
 
         $uriGetHash = "{0}/api/getpasshash.htm?username={1}&password={2}" -f $PRTGCoreUri,$Credentials.UserName,$Credentials.GetNetworkCredential().Password
         $UserHash = Invoke-WebRequest $uriGetHash -verbose:$false | Select-Object -ExpandProperty Content
