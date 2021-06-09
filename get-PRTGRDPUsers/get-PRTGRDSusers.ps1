@@ -4,7 +4,7 @@
     Returns output in PRTG json format
 .DESCRIPTION
     Returns error to PRTG if no users found or other error is found.
-    Returns data with warning if a user does not have C'Cpompany' attribute set.
+    Returns data with warning if a user does not have 'Company' attribute set.
 .EXAMPLE
     PS C:\> .\get-PRTGRDSusers.ps1 -Verbose
         Output json formatted file
