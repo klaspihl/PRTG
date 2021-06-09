@@ -1,4 +1,4 @@
-# PRTG sensor to count domain user accounts is multiple security groups and group them by attribute 'company'
+# PRTG sensor to count domain user accounts in multiple security groups and group them by attribute 'company'
 
 
 ## Result
@@ -7,7 +7,7 @@
 
 ![Sensor warning](./images/resultwarning.png)
 
-
+## Help
 ```powershell
 NAME
     \get-PRTGRDSusers.ps1
@@ -73,6 +73,7 @@ NOTES
         Output json formatted file
 
 ```
+## Ouptut
 ```json
         {
         "prtg": {
