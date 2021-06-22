@@ -69,13 +69,13 @@ Try {
         Write-Verbose "Searching for users and groups in $($Farm.Name)"
         $Farm  | Get-ADGroupMember -Recursive
     }
-    $AllusersSamaccountname = $AllUsers | Select-Object -Unique -ExpandProperty SamAccountName
-    if(-not $AllusersSamaccountname ) {
+    $AllusersSID = $AllUsers | Select-Object -ExpandProperty SID  -Unique
+    if(-not $AllusersSID ) {
         Write-Error -message "No Active Directory users accounts found in group(s) with filter $GroupNameFilter"
     }
-    $GroupedCompany = $AllusersSamaccountname | Get-ADUser -Properties Company | Group-Object Company
+    $GroupedCompany = $AllusersSID | Get-ADUser -Properties Company  | Select-Object Company,SamAccountName | Group-Object Company
 
-    $Result = foreach ($Company in $GroupedCompany) {
+    [array]$Result = foreach ($Company in $GroupedCompany) {
         if(-not $Company.Name) {
             Write-Warning -Message "$($Company.Group.SamAccountName) dont have property company defined in AD" -WarningVariable WarningMessage
         }
@@ -87,16 +87,16 @@ Try {
             Users = $Company.Count
         }
     }
-    $Total = [PSCustomObject]@{
+    [array]$Total = [PSCustomObject]@{
         Company = 'Total'
         Users = $GroupedCompany | Select-Object -Property Count | Measure-Object -Sum count | Select-Object -ExpandProperty Sum
     }
     Write-Verbose "Adding total sum of users to result as 'Total'"
-    $Result += $Total
+    $Total += $Result
 
     [PSCustomObject]@{
         prtg =  [PSCustomObject]@{
-            result = foreach ($CompanyID in $Result) {
+            result = foreach ($CompanyID in $Total) {
                 [PSCustomObject]@{
                         channel = $CompanyID.Company
                         value = $CompanyID.Users
