@@ -67,7 +67,7 @@ Try {
     $AllRDSFarmSG = Get-ADGroup -Filter {Name -like  $GroupNameFilter}
     [array]$AllUsers += foreach ($Farm in $AllRDSFarmSG) {
         Write-Verbose "Searching for users and groups in $($Farm.Name)"
-        $Farm  | Get-ADGroupMember -Recursive
+        $Farm  | Get-ADGroupMember -Recursive | Where-Object objectClass -eq 'user'
     }
     $AllusersSID = $AllUsers | Select-Object -ExpandProperty SID  -Unique
     if(-not $AllusersSID ) {
