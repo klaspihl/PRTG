@@ -50,6 +50,11 @@
 .NOTES
     2021-06-08 Verson 1 Klas.Pihl@Atea.se
         Developed as customer soulution
+    2021-06-23 Version 1.1
+        Performance tweeks to;
+        - filter unique users
+        - find ADuser object
+        Verbose logging and progress    /Klas.Pihl@Atea.se
 #>
 [CmdletBinding()]
 param (
@@ -59,21 +64,50 @@ param (
     $NotDefinedCompanyMessage = 'not defined'
 )
 #Requires -Modules ActiveDirectory
-
+$ProgressPreference = $VerbosePreference
 $ErrorActionPreference = "Stop"
+Write-Verbose "Total runtime: $(Measure-Command {
 Try {
 
     Write-Verbose "Searching for all groups of filter $GroupNameFilter"
-    $AllRDSFarmSG = Get-ADGroup -Filter {Name -like  $GroupNameFilter}
+    $AllRDSFarmSG =( Get-ADGroup -Filter {Name -like  $GroupNameFilter})
+    $i=0
     [array]$AllUsers += foreach ($Farm in $AllRDSFarmSG) {
+        $i++
+        Write-Progress -activity "Get all users in security group $($Farm.Name)" -PercentComplete (100*$i/$($AllRDSFarmSG.count)) -SecondsRemaining -1 -status ("{0}/{1}" -f $i,$AllRDSFarmSG.count)
         Write-Verbose "Searching for users and groups in $($Farm.Name)"
         $Farm  | Get-ADGroupMember -Recursive | Where-Object objectClass -eq 'user'
     }
-    $AllusersSID = $AllUsers | Select-Object -ExpandProperty SID  -Unique
+    Write-Verbose "Sort #$($AllUsers.count) user accounts for duplicates found in #$($AllRDSFarmSG.count) security groups"
+    $AllusersSID = $AllUsers | Select-Object -ExpandProperty SID | Select-Object -ExpandProperty Value -Unique
+    Write-Verbose "Found #$($AllusersSID.count) unique users"
+
     if(-not $AllusersSID ) {
         Write-Error -message "No Active Directory users accounts found in group(s) with filter $GroupNameFilter"
     }
-    $GroupedCompany = $AllusersSID | Get-ADUser -Properties Company  | Select-Object Company,SamAccountName | Group-Object Company
+
+    $i=0
+    $AllDomains = Get-ADForest | Select-Object -ExpandProperty domains
+    $AllforestADUsers = ($AllDomains | ForEach-Object {
+        $i++
+        Write-Progress -activity "Get all users in forest $PSItem" -PercentComplete (100*$i/$($AllDomains.count)) -SecondsRemaining -1 -status ("{0}/{1}" -f $i,$AllDomains.count)
+        Get-ADUser -filter * -Server $PSitem -properties Company | Select-Object Company,sAMAccountName,sid
+    })
+    Write-Verbose "Found total of #$($AllforestADUsers.count) users in entire AD forest"
+
+
+    #Need to get user attribute 'company' that is not returned from Get-ADGroupMember. Use list of user from whole AD forest in $AllforestADUsers
+    $i=0
+    $ADuserWithAttribute = foreach ($User in $AllusersSID[0..200]) {
+        $i++
+        Write-Progress -activity "Map user SID $User with User ADobject " -PercentComplete (100*$i/$($AllusersSID.count)) -SecondsRemaining -1 -status ("{0}/{1}" -f $i,$AllusersSID.count)
+        $AllforestADUsers | where-object {$PSItem.SID.value -eq $User} | Select-Object Company,SamAccountName
+    }
+    Write-Verbose "Group users on 'Company' attribute"
+    $GroupedCompany =  $ADuserWithAttribute | Group-Object Company
+    #$AllusersADobject | Get-ADUser -Properties Company  | Select-Object Company,SamAccountName | Group-Object Company
+
+    #$GroupedCompany = $AllusersADobject | Get-ADUser -Properties Company  | Select-Object Company,SamAccountName | Group-Object Company
 
     [array]$Result = foreach ($Company in $GroupedCompany) {
         if(-not $Company.Name) {
@@ -94,7 +128,7 @@ Try {
     Write-Verbose "Adding total sum of users to result as 'Total'"
     $Total += $Result
 
-    [PSCustomObject]@{
+    $Output = [PSCustomObject]@{
         prtg =  [PSCustomObject]@{
             result = foreach ($CompanyID in $Total) {
                 [PSCustomObject]@{
@@ -116,10 +150,12 @@ Try {
 
 
 } Catch {
-    [PSCustomObject]@{
+    $Output = [PSCustomObject]@{
         prtg = [PSCustomObject]@{
             error = 1
             text = $error[0].Exception.Message
         }
     } | ConvertTo-Json
 }
+} | Select-Object -ExpandProperty TotalSeconds) seconds"
+Write-Output $Output
