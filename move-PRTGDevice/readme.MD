@@ -83,5 +83,5 @@ $Devices.objid | Select-Object -First ([int]($Devices.count)/2) | `
 ```
 
 ## Notes
-Tested on PRTG version 22.3.79.2108+
-Requeires SSL over 443
+* Tested on PRTG version 22.3.79.2108+
+* Requeires SSL over 443
