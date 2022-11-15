@@ -7,7 +7,7 @@
 .NOTES
     2022-11-11 Version 1 Klas.Pihl@Atea.se
 .EXAMPLE
-    .\get-PRTGevices.ps1 -CoreServer prtg.pihl.local -User admin -PassHash 123456789  -Verbose -SourceGroupID 50
+    .\get-PRTGDevices.ps1 -CoreServer prtg.pihl.local -User admin -PassHash 123456789  -Verbose -SourceGroupID 50
 .PARAMETER CoreServer
     PRTG core server FQDN
 

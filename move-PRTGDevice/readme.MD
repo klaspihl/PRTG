@@ -64,7 +64,7 @@ $PassHash = 123456789 ; `
 $User = "admin" ; `
 $SourceGroupID=8416 ; `
 $TargetGroupID=8119 ;`
-.\get-PRTGevices.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -SourceGroupID $SourceGroupID | `
+.\get-PRTGDevices.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -SourceGroupID $SourceGroupID | `
     Where-Object group -eq Azure | Select-Object -ExpandProperty objid | `
         .\move-PRTGDevice.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -TargetGroupID $TargetGroupID
 ```
@@ -77,7 +77,7 @@ $PassHash = 123456789 ; `
 $User = "admin" ; `
 $SourceGroupID=8416 ; `
 $TargetGroupID=8119 ;`
-$Devices = .\get-PRTGevices.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -SourceGroupID $SourceGroupID `
+$Devices = .\get-PRTGDevices.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -SourceGroupID $SourceGroupID `
 $Devices.objid | Select-Object -First ([int]($Devices.count)/2) | `
     .\move-PRTGDevice.ps1 -CoreServer $CoreServer -User $User -PassHash $Passhash -TargetGroupID $TargetGroupID
 ```
