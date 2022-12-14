@@ -15,10 +15,12 @@
 [CmdletBinding()]
 param (
     $BaseURL='https://prtg.pihl.local',
-    $SensorID=9941,
+    $SensorID=9979,
     $Minutes=720, #half day
     $User,
-    $Password
+    $Password,
+    [ValidateSet('Minimum','Maximum','Average')]
+    $Message='Minimum'
 )
 
 
@@ -32,8 +34,8 @@ try {
     $url = '{0}/api/historicdata.json?id={1}&avg=0&sdate={2}&edate={3}&username={4}&password={5}' -f $BaseURL,$SensorID,$StartDate,$EndDate,$User,$Password
     $data = Invoke-WebRequest $url -UseBasicParsing
     $result = $data.Content | ConvertFrom-Json | Select-Object -ExpandProperty histdata | Where-Object coverage_raw -gt 0
-    $AllStats = $result.value_raw | Measure-Object -AllStats
-
+    $AllStats = $result.value_raw | Measure-Object  -Average -Maximum -Minimum # PS 7+-AllStats
+    $text = "{0}: {1}" -f $Message,$AllStats.$Message
 
     $Output = [PSCustomObject]@{
         prtg = [PSCustomObject]@{
@@ -42,20 +44,24 @@ try {
                 Channel = 'Maximum'
                 Float = 1
                 Value = $AllStats.Maximum
+                unit= "custom"
                 CustomUnit = 'C'
             },
             [PSCustomObject]@{
                 Channel = 'Minimum'
                 Float = 1
                 Value = $AllStats.Minimum
+                unit= "custom"
                 CustomUnit = 'C'
             },
             [PSCustomObject]@{
                 Channel = 'Average'
                 Float = 1
-                Value = [math]::Round($AllStats.Average,1)
+                Value =([math]::Round($AllStats.Average,1))
+                unit= "custom"
                 CustomUnit = 'C'
             }
+            text = $text
         }
     }
 
