@@ -12,7 +12,7 @@ Example;
 ### Installation
 [Choco](https://community.chocolatey.org/) package;
 ```powershell
-choco install openhardwaremonitor
+choco install choco install librehardwaremonitor
 ```
 
 ## Background
