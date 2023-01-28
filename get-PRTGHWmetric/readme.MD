@@ -7,7 +7,7 @@ Newer fork from Open Hardware Monitor called [Libre Hardware Monitor](https://gi
 Updated PRTG sensor with added param to define CIM source.
 Example; 
 ```powershell
-. .\get-PRTGHWTemp.ps1 -Computer laptop.pihl.local -Sensortype power -Monitor librehardwaremonitor
+. .\get-PRTGHWmetric.ps1 -Computer laptop.pihl.local -Sensortype power -Source librehardwaremonitor
 ```
 ### Installation
 [Choco](https://community.chocolatey.org/) package;
