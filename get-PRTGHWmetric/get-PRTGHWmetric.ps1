@@ -11,10 +11,20 @@
 
 .PARAMETER Sensortype
     Requested data type.
+
+.PARAMETER Source
+    Datasource 
 .OUTPUTS
-    PRTG advanced XML output
+    PRTG advanced json output
 .NOTES
-    2021-03-27 0.9 Initial code. Limitied error handling /Klas.Pihl@Gmail.com
+    2021-03-27 0.9 Initial code. Limitied error handling /Klas.Pihl@gmail.com
+    2023-01-28 1.0 Added;
+        Error handling
+        Change default data source to LibreHardwareMonitor with option OpenHardwareMonitor
+        Added sensortypes;
+            Energy (battery)
+            Throughput
+        Issues, LibreHardwareMonitor do not return correct suffix/unit so use of hard coded units. /Klas.Pihl@gmail.com
 #>
 [CmdletBinding()]
 param (
@@ -25,81 +35,61 @@ param (
         "Power",
         "Clock",
         "Load",
-        "Load",
         "Data",
         "Temperature",
         "Voltage",
-        "Level"
+        "Level",
+        "Energy",
+        "Throughput"
         )]
-    [string]$Sensortype="Temperature"
+    [string]$Sensortype="Temperature",
+    [ValidateSet(
+        'OpenHardwareMonitor',
+        'LibreHardwareMonitor'
+    )]
+    $Source='LibreHardwareMonitor'
 )
-function Format-PrtgXml([xml]$xml)
-{
-    $stringWriter = New-Object System.IO.StringWriter
-    $xmlWriter = New-Object System.Xml.XmlTextWriter $stringWriter
 
-    $xmlWriter.Formatting = "Indented"
-    $xmlWriter.Indentation = 4
-
-    $xml.WriteContentTo($xmlWriter)
-
-    $xmlWriter.Flush()
-    $stringWriter.Flush()
-
-    $stringWriter.ToString()
-}
-function Export-PRTGXML {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        $Channel,
-        [string]$Value,
-        [ValidateSet(
-            'BytesBandwidth',
-            'BytesMemory',
-            'BytesDisk',
-            'Temperature',
-            'Percent',
-            'TimeResponse',
-            'TimeSeconds',
-            'Custom',
-            'Count',
-            'CPU',
-            'BytesFile',
-            'SpeedDisk',
-            'SpeedNet',
-            'TimeHours'
-            )]
-        $unit
-    )
-    $Value = $Value.Replace(',','.')
-    Write-Output '<result>'
-    Write-Output ('<channel>{0}</channel>' -f $Channel)
-    #Write-Output ('<unit>{0}</unit>' -f $unit)
-    Write-Output '<showChart>1</showChart>'
-    Write-Output '<showTable>1</showTable>'
-    Write-Output '<float>1</float>'
-    Write-Output ('<value>{0}</value>' -f $Value)
-    Write-Output '</result>'
-}
+#Main code
 try {
-
-    $Data = Get-CimInstance -ClassName Sensor -Namespace  root/OpenHardwareMonitor -CimSession $Computer -ErrorAction Stop | Where-Object SensorType -eq $Sensortype
-    $XMLOutput = '<prtg>'
-    Write-Verbose "Creating XML formatted output"
-    foreach($Sensor in $Data) {
-        $Channel = "{0}/{1}" -f $Sensor.Parent,$Sensor.Name
-        $XMLOutput += export-PRTGXML -Channel $Channel  -value $Sensor.value # -unit Temperature
+    $Measurements = Get-CimInstance -ClassName Sensor -Namespace  ("root/{0}" -f $Source) -CimSession $Computer -ErrorAction Stop | Where-Object SensorType -eq $Sensortype
+    if([string]::IsNullOrEmpty($Measurements)) {
+        throw "No data returned from Namespace root/$Source"
     }
-    $XMLOutput += '</prtg>'
-    Write-Verbose -Message "Write formatted result to PRTG"
-    Format-PrtgXml -xml $XMLOutput
-} catch {
-        $XMLOutput = '<prtg>'
-        $XMLOutput += Write-Output '<error>1</error>'
-        $XMLOutput += Write-Output ('<text>{0}</text>' -f ($error[0].Exception.Message | Out-String))
-        $XMLOutput += '</prtg>'
-        Write-Verbose -Message "Error found, exiting"
-        Format-PrtgXml -xml $XMLOutput
-    exit 1
+    $CustomUnit = switch ($Sensortype) {
+        "Power" {"W"}
+        "Clock" {"MHz"}
+        "Load" {"%"}
+        "Data" {"GB"}
+        "Temperature" {"C"}
+        "Voltage" {"V"}
+        "Level" {"%"}
+        "Energy" {"mWh"}
+        "Throughput" {"MB/s"}
+        Default {'#'}
+    }
+    $Output = [PSCustomObject]@{
+        prtg = [PSCustomObject]@{
+            result =
+                $Measurements | ForEach-Object {
+                    [PSCustomObject]@{
+                        Channel = $PSitem.Name
+                        Float = 1
+                        Value = $PSitem.value
+                        CustomUnit = $CustomUnit
+
+                    }
+                }
+        }
+    }
+
+} Catch {
+    $error
+    $Output = [PSCustomObject]@{
+        prtg = [PSCustomObject]@{
+            error = 1
+            text = $error[0].Exception.Message
+        }
+    }
 }
+Write-Output ($Output | ConvertTo-Json -depth 5 | ForEach-Object { [System.Text.RegularExpressions.Regex]::Unescape($PSItem) })
