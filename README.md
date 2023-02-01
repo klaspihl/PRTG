@@ -22,3 +22,8 @@ Klas.Pihl@Atea.se
 | [SNMP](./SNMP/) | 2022-06-16 |Installs SNMP feature on Windows systems from WMF 5.1 |
 | [Temp-443Mhz](./Temp-443Mhz/) | 2022-12-14 |Temperature and humidity from Telldus sensors|
 | [TimeDispersion](./TimeDispersion/) | 2020-01-12 |Measure time diff between PRTG probe server and remote system |
+| [get-PRTGSQLBatchJob](./get-PRTGSQLBatchJob/) | 2022-03-01 |Query MS SQL with multiple parameters in query |
+
+
+
+get-PRTGSQLBatchJob
