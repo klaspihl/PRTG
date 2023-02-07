@@ -58,16 +58,31 @@ try {
         $APIkey = Get-Content $APIkey -ErrorAction Stop
     }
 
-    $APIURL = switch ($PSBoundParameters.Keys) {
-        'PauseFor' {'/api/pauseobjectfor.htm?id={0}&pausemsg={1}&duration={2}&apitoken={3}' -f $ID,$Comment,$PauseFor,$APIkey }
-        'Resume' {'/api/pause.htm?id={0}&action=1&apitoken={1}' -f $ID,$APIkey }
-        'Pause' { '/api/pause.htm?id={0}&action=0&apitoken={1}' -f $ID,$APIkey }
+   switch ($PSBoundParameters.Keys) {
+        'PauseFor' {
+            $APIURL = '/api/pauseobjectfor.htm?id={0}&pausemsg={1}&duration={2}&apitoken={3}' -f $ID,$Comment,$PauseFor,$APIkey 
+            $Action = 'Paused for {0} minutes' -f $PauseFor
+        }
+        'Resume' {
+            $APIURL = '/api/pause.htm?id={0}&action=1&apitoken={1}' -f $ID,$APIkey 
+            $Action = 'Resumed'
+        }
+        'Pause' { 
+            $APIURL = '/api/pause.htm?id={0}&action=0&apitoken={1}' -f $ID,$APIkey 
+            $Action = 'Paused'
+        }
         Default {}
     }
     $result = Invoke-WebRequest ("{0}{1}" -f $PRTGServer.TrimEnd('/'),$APIURL) -ErrorAction Stop
 
     switch ($result.StatusCode) {
-        200 { Write-Host "Success" -ForegroundColor Green }
+        200 {
+            Write-Output ([PSCustomObject]@{
+                ID = $ID
+                Action = $Action
+                Status = "OK"
+            })
+        }
         400 { throw 'Bad Request' }
         401 { throw 'Unauthorized' }
         403 { throw 'Forbidden' }
