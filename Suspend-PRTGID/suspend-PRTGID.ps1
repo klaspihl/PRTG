@@ -64,7 +64,7 @@ try {
         'Pause' { '/api/pause.htm?id={0}&action=0&apitoken={1}' -f $ID,$APIkey }
         Default {}
     }
-    $result = Invoke-WebRequest ("{0}{1}" -f $PRTGServer.TrimEnd('/'),$APIURL) -ErrorAction Stop -Verbose
+    $result = Invoke-WebRequest ("{0}{1}" -f $PRTGServer.TrimEnd('/'),$APIURL) -ErrorAction Stop
 
     switch ($result.StatusCode) {
         200 { Write-Host "Success" -ForegroundColor Green }
