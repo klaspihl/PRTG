@@ -5,6 +5,8 @@
     Used for scheduled system restarts like Windows update or nightly maintenence work
 .NOTES
     2023-02-07 Version 1 Klas.Pihl@Atea.se
+    2023-02-15 Version 1.1
+        Add support for pipeline input for ID or alias name objid. Gives possibility to pipeline device from get-PRTGDeviceList
 .LINK
     https://github.com/klaspihl/PRTG
 .EXAMPLE
@@ -14,6 +16,10 @@
 .EXAMPLE
      .\suspend-PRTGID.ps1 -ID 1234 -APIkey .\apikey.sec -PauseFor 15
         Get APIKey from file and pauses object for 15 minutes, then automaticly resume.
+
+.EXAMPLE
+    .\get-PRTGDeviceList.ps1 -PRTGServer "https://prtg.pihl.local/"  -DeviceFQDN test.org -APIkey 4TZNQQ6HJ....R5RXBDNSA====== | 
+        .\Suspend-PRTGID\suspend-PRTGID.ps1 --APIkey 4TZNQQ6HJ....R5RXBDNSA====== -PauseFor 10
 
 .PARAMETER APIkey
     PRTG User API key
@@ -40,6 +46,9 @@
 [CmdletBinding()]
 param (
     [string]$APIkey='.\apikey.sec',
+    [parameter(Mandatory=$true, Position=1, ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+    [ValidateRange(1,2147483647)]
+    [Alias("objid")]
     [int]$ID,
     [string]$PRTGServer = 'https://prtg.pihl.local',
     [Parameter(ParameterSetName = 'PauseFor')]
@@ -53,6 +62,9 @@ param (
     [string]$Comment = "Automatic pause by $($MyInvocation.MyCommand.Name)"
 )
 try {
+    if(-not ($ID -ge  1)) {
+        throw "Object ID of $ID is root, not permitted ID"
+    }
     if(Test-Path $APIkey) {
         Write-Verbose "Parameter APIKey is a valid file path, try to load API key from $APIKey"
         $APIkey = Get-Content $APIkey -ErrorAction Stop
@@ -73,8 +85,8 @@ try {
         }
         Default {}
     }
-    $result = Invoke-WebRequest ("{0}{1}" -f $PRTGServer.TrimEnd('/'),$APIURL) -ErrorAction Stop
-
+    $result = Invoke-WebRequest ("{0}{1}" -f $PRTGServer.TrimEnd('/'),$APIURL) -ErrorAction Stop 
+    
     switch ($result.StatusCode) {
         200 {
             Write-Output ([PSCustomObject]@{
