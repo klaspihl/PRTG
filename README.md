@@ -24,3 +24,4 @@ Klas.Pihl@Atea.se
 | [TimeDispersion](./TimeDispersion/) | 2020-01-12 |Measure time diff between PRTG probe server and remote system |
 | [get-PRTGSQLBatchJob](./get-PRTGSQLBatchJob/) | 2022-03-01 |Query MS SQL with multiple parameters in query |Customer specific|
 | [Suspend-PRTGID](./Suspend-PRTGID/) | 2022-03-07 |Pauses object in PRTG by object ID |API|
+| [Measure-bbk](./measure-bbk/) | 2023-04-12 | Use Windows WSL to measure throughput of internet connection |Swedish Bredbandskollen specific|
