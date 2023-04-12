@@ -100,7 +100,7 @@ try {
             Latency       = [int][math]::Round($Latency,0)
             Download      = [int][math]::Round($Download,0)
             Upload        = [int][math]::Round($Upload,0)
-            ExecutionTime = [int][math]::Round($ExecutionTime.TotalMilliseconds,0)
+            ExecutionTime = $null #[int][math]::Round($ExecutionTime.TotalMilliseconds,0)
         }
     }
     Write-Verbose ($command | Out-String)
@@ -110,7 +110,7 @@ try {
         [pscredential]$Credential = New-Object System.Management.Automation.PSCredential ($env:prtg_windowsuser, $Password)
         $Result = Invoke-Command -ComputerName $Computer -ScriptBlock $command -Credential $Credential
     }
-    
+    $Result.ExecutionTime=[int][math]::Round($ExecutionTime.TotalMilliseconds,0)
 
 
 #region PRTG output
@@ -139,7 +139,7 @@ try {
                     Value = $Result.ExecutionTime
                     CustomUnit = 'ms'
                     LimitMode = 1
-                    LimitMaxError = 15000
+                    LimitMaxError = 30000
                 },
                 [PSCustomObject]@{
                     Channel = "Latency"
