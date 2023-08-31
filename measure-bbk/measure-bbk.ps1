@@ -1,11 +1,10 @@
 <#
 .SYNOPSIS
-    Use WSL on Windows together with Bredbandskollens's binary to measure internet speed
+    Use container together with Bredbandskollens's binary to measure internet speed
     
 
 .DESCRIPTION
-    Use WSL on Windows together with Bredbandskollens's binary to measure internet speed
-    Output 4 PRTG channels
+    Use docker container that package bbk cli and returns a json object.
 
     WSL and Linux distro must be accessable from the user session that is invoked by the custom sensor (PRTG Security context). 
 
@@ -16,10 +15,11 @@
 
 .NOTES
     2023-04-11 Version 1 Klas.Pihl@gmail.com
+    2023-08-31 Version 2 using docker as application /Klas.Pihl@gmail.com
 .LINK
     https://www.bredbandskollen.se/om/mer-om-bbk/bredbandskollen-cli/
 .EXAMPLE
-    . .\measure-bbk.ps1 -Duration 2 -Logfile "c:\temp\bbk.log" -Verbose
+    . .\measure-bbk.ps1
 
 .PARAMETER Duration
     Duration in seconds to measure
@@ -78,41 +78,12 @@ param (
 )
 $script:ErrorActionPreference='Stop'
 try {
-    [scriptblock]$command = {
-        if (-not $using:Logfile) {
-            $Logfile = New-TemporaryFile 
-        } else {
-            $Logfile = Get-Item -Path $using:Logfile
-        }
-        Set-Location $Logfile.Directory
-
-        if ($using:Duration) {
-            $Duration = "--duration={0}" -f $using:Duration
-        }
-        else {
-            $Duration = $null
-        }
-
-        $command = 'wsl bbk_cli --out={0} --quiet {1}' -f $Logfile.Name, $Duration
-        Invoke-Expression $command
-        $Latency, $Download, $Upload, $null = (Get-Content $Logfile.FullName -Last 1) -split (' ')
-        [PSCustomObject]@{
-            Latency       = [int][math]::Round($Latency,0)
-            Download      = [int][math]::Round($Download,0)
-            Upload        = [int][math]::Round($Upload,0)
-            ExecutionTime = $null #[int][math]::Round($ExecutionTime.TotalMilliseconds,0)
-        }
-    }
-    Write-Verbose ($command | Out-String)
     $ExecutionTime = Measure-Command {
-        #Invoke-Expression $command
-        [securestring]$Password = ConvertTo-SecureString $env:prtg_windowspassword -AsPlainText -Force
-        [pscredential]$Credential = New-Object System.Management.Automation.PSCredential ($env:prtg_windowsuser, $Password)
-        $Result = Invoke-Command -ComputerName $Computer -ScriptBlock $command -Credential $Credential
+        $Result = Invoke-Command -ComputerName $Computer -command {docker run --rm --name prtg_bbk klaspihl/bbk_json:latest} | ConvertFrom-Json | Select-Object *,ExecutionTime
     }
     $Result.ExecutionTime=[int][math]::Round($ExecutionTime.TotalMilliseconds,0)
 
-
+write-verbose $result
 #region PRTG output
     $Output = [PSCustomObject]@{
         prtg = [PSCustomObject]@{
@@ -120,7 +91,7 @@ try {
                 [PSCustomObject]@{
                     Channel = 'Download'
                     Float = 0
-                    Value = $Result.Download
+                    Value = [int][math]::Round($Result.Download,0)
                     LimitMode = 1
                     LimitMinError = "100"
                     CustomUnit = 'MB/s'
@@ -128,7 +99,7 @@ try {
                 [PSCustomObject]@{
                     Channel = 'Upload'
                     Float = 0
-                    Value = $Result.Upload
+                    Value = [int][math]::Round($Result.Upload,0)
                     LimitMode = 1
                     LimitMinError = "100"
                     CustomUnit = 'MB/s'
@@ -139,12 +110,12 @@ try {
                     Value = $Result.ExecutionTime
                     CustomUnit = 'ms'
                     LimitMode = 1
-                    LimitMaxError = 30000
+                    LimitMaxError = 15000
                 },
                 [PSCustomObject]@{
                     Channel = "Latency"
                     Float = 0
-                    Value = $Result.Latency
+                    Value = [int][math]::Round($Result.Latency,0)
                     CustomUnit = 'ms'
                     LimitMode = 1
                     LimitMaxError = 50
