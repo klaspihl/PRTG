@@ -26,3 +26,4 @@ Klas.Pihl@Atea.se
 | [Suspend-PRTGID](./Suspend-PRTGID/) | 2022-03-07 |Pauses object in PRTG by object ID |API|
 | [Measure-bbk](./measure-bbk/) | 2023-04-12 | Use Windows WSL to measure throughput of internet connection |Swedish Bredbandskollen specific|
 | [get-PRTGScheduledTask](./get-PRTGScheduledTask/) | 2023-05-02 | Measure seconds since scheduled task last ran | |
+| [add-WMIUser](./add-WMIuser/) | 2023-09-01 | Add user as permitted DCOM and WMI control user to avoid admin privileges ||
